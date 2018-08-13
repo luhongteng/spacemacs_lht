@@ -6,6 +6,7 @@ eproject.lst
 .smex-items
 \#*
 .places
+.cache/
 /eww-bookmarks
 eshell/history
 .emacs.desktop
