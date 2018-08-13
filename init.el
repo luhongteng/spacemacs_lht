@@ -36,6 +36,8 @@
 ;;personal
 
 (setq org-todo-keywords
-  '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")))
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
+  '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")));;TODO keywords
+(add-to-list 'default-frame-alist '(fullscreen . maximized));;configure the initial window size to full screen
+(global-set-key (kbd "M-x") 'helm-M-x);;use helm-M-x instead
+
 
