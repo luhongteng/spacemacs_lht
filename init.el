@@ -14,36 +14,42 @@
 
 ;;========================= additional packages ========================;;
 
+(add-to-list 'load-path "~/.emacs.d/my_packages/")
+(load "column-marker")
+
 (setq my-favourite-package '(ace-link
-   ace-window adaptive-wrap aggressive-indent anaconda-mode anzu archives 
-   async auto-compile auto-highlight-symbol 
+   ace-window adaptive-wrap aggressive-indent anaconda-mode anzu archives
+   async auto-compile auto-highlight-symbol
    avy bind-key bind-map clean-aindent-mode
-    column-enforce-mode company counsel 
+    column-enforce-mode company counsel
     counsel-projectile cython-mode dash
-    dash dash-functional define-word 
+    dash dash-functional define-word
     diminish dumb-jump elisp-slime-nav
     elpl elpy emmet-mode epl
     eval-sexp-fu evil evil-anzu evil-args evil-ediff
     evil-escape evil-exchange evil-iedit-state evil-indent-plus
-    evil-lisp-state evil-matchit evil-mc evil-nerd-commenter 
-    evil-numbers evil-search-highlight-persist evil-surround 
-    evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar 
-    exec-path-from-shell expand-region eyebrowse f fancy-battery 
-    fill-column-indicator flx flx-ido flycheck gh-md ghub git-commit 
-    golden-ratio google-translate goto-chg graphviz-dot-mode haml-mode helm 
-    helm-core helm-make highlight highlight-indentation highlight-numbers 
-    highlight-parentheses hl-todo hungry-delete hy-mode hydra 
-    iedit indent-guide ivy ivy-hydra link-hint linum-relative 
-    live-py-mode lorem-ipsum lv macrostep magit magit-popup 
-    markdown-mode markdown-toc mmm-mode move-text neotree 
-    open-junk-file org-bullets org-clock-convenience org-plus-contrib 
-    packed paradox parent-mode parrot pcre2el persp-mode pip-requirements 
-    pkg-info popup popwin powerline projectile pug-mode py-isort pyenv-mode 
+    evil-lisp-state evil-matchit evil-mc evil-nerd-commenter
+    evil-numbers evil-search-highlight-persist evil-surround
+    evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar
+    exec-path-from-shell expand-region eyebrowse f fancy-battery
+    fill-column-indicator flx flx-ido flycheck gh-md ghub git-commit
+    golden-ratio google-translate goto-chg graphviz-dot-mode haml-mode helm
+    helm-core helm-make highlight highlight-indentation highlight-numbers
+    highlight-parentheses hl-todo hungry-delete hy-mode hydra
+    iedit indent-guide ivy ivy-hydra link-hint linum-relative
+    live-py-mode lorem-ipsum lv macrostep magit magit-popup
+    markdown-mode markdown-toc mmm-mode move-text neotree
+    open-junk-file org-bullets org-clock-convenience org-plus-contrib
+    packed paradox parent-mode parrot pcre2el persp-mode pip-requirements
+    pkg-info popup popwin powerline projectile pug-mode py-isort pyenv-mode
     pytest pythonic pyvenv rainbow-delimiters request restart-emacs s
     sass-mode scss-mode slim-mode smartparens smex spaceline spinner swiper
-    tagedit toc-org transient treepy undo-tree use-package uuidgen vi-tilde-fringe 
-    volatile-highlights web-mode wgrep which-key winum with-editor ws-butler 
-    yapfify yasnippet))
+    tagedit toc-org transient treepy undo-tree use-package uuidgen vi-tilde-fringe
+    volatile-highlights web-mode wgrep which-key winum with-editor ws-butler
+    yapfify yasnippet thingatpt diff-hl
+    helm-ag;;depend on ag: brew install ag
+    
+    ))
 
 
 (package-initialize)
@@ -156,28 +162,65 @@
 
 
 ;;========================= key-binding =====================;;
+
+(eval-after-load 'python
+  '(progn
+     (define-key python-mode-map (kbd "C-c C-f") nil)))
+
 (add-hook 'elpy-mode-hook
           (lambda ()
             (local-unset-key (kbd "M-TAB"))
+
+            ;;code navigating
             (define-key elpy-mode-map (kbd "C-c j") 'elpy-goto-definition)
             (define-key elpy-mode-map (kbd "C-c d") 'elpy-goto-assignment)
-            
+
             )
           )
+;;code navigating
 (global-set-key (kbd "C-c b") 'pop-tag-mark)
 (global-set-key (kbd "C-c l") 'goto-line)
-(global-set-key (kbd "s-j") 'ace-window)
-(global-set-key (kbd "C-c C-p") 'previous-buffer)
-(global-set-key (kbd "C-c C-n") 'next-buffer)
 
+;;window or buffer managment
+(global-set-key (kbd "s-j") 'ace-window)
+(global-set-key (kbd "s-[") 'previous-buffer)
+(global-set-key (kbd "s-]") 'next-buffer)
+
+
+(global-set-key (kbd "s-]") 'next-buffer)
+
+
+;;projectile
+(global-set-key (kbd "C-c C-f") 'projectile--find-file)
+
+
+;;imenu
+(global-set-key (kbd "C-c i") #'imenu)
+
+;;search
+(global-set-key (kbd "C-c s") 'helm-do-ag-project-root)
+
+;;highlight symbol key-binding
+(global-set-key (kbd "C-c C-h") 'highlight-symbol)
+
+
+;;comment
+(global-set-key (kbd "C-c C-/") 'comment-or-uncomment-region)
+(global-set-key (kbd "C-{") 'shrink-window-horizontally)
+(global-set-key (kbd "C-}") 'enlarge-window-horizontally)
 
 
 ;;========================= coding ===========================;;
+
+;;;80 column
+(require 'column-marker)
+(add-hook 'python-mode-hook (lambda () (interactive) (column-marker-1 121)))
+
 ;;;; 设置编辑环境
 ;; Enable line numbers globally
 ;;目前会导致 py 文件有两个line numbers
-;;(when (version<= "26.0.50" emacs-version )
-;;  (global-display-line-numbers-mode))
+(when (version<= "26.0.50" emacs-version )
+  (global-display-line-numbers-mode))
 ;; 设置为中文简体语言环境
 (set-language-environment 'Chinese-GB)
 ;; 设置emacs 使用 utf-8
