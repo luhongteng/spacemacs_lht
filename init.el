@@ -57,13 +57,19 @@
 (add-to-list 'package-archives
              '("melpa" . "http://melpa.org/packages/") t)
 ; (mapc #'package-install my-favourite-package)
-; (elpy-enable)
+                                        ; (elpy-enable)
+
 
 ;;========================= additional packages ========================;;
 
 ;; Increase gc-cons-threshold, depending on your system you may set it back to a
 ;; lower value in your dotfile (function `dotspacemacs/user-config')
 (setq gc-cons-threshold 100000000)
+
+(use-package elpy
+  :ensure t
+  :init
+  (elpy-enable))
 
 (defconst spacemacs-version         "0.200.13" "Spacemacs version.")
 (defconst spacemacs-emacs-min-version   "24.4" "Minimal version of Emacs.")
@@ -165,7 +171,12 @@
 
 (eval-after-load 'python
   '(progn
-     (define-key python-mode-map (kbd "C-c C-f") nil)))
+     (define-key python-mode-map (kbd "C-c C-f") nil)
+     (define-key python-mode-map (kbd "C-c C-s") nil)
+     ))
+(eval-after-load 'python
+  '(progn
+     (define-key elpy-mode-map (kbd "C-c C-s") nil)))
 
 (add-hook 'elpy-mode-hook
           (lambda ()
@@ -211,6 +222,11 @@
 
 
 ;;========================= coding ===========================;;
+
+
+;;_不再是当做 word seperator 极度好用0.0
+(defun underline-in-word () (modify-syntax-entry ?_ "w"))
+(add-hook 'python-mode-hook 'underline-in-word)
 
 ;;;80 column
 (require 'column-marker)
