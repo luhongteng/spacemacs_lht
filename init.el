@@ -183,22 +183,21 @@
             (local-unset-key (kbd "M-TAB"))
 
             ;;code navigating
-            (define-key elpy-mode-map (kbd "C-c j") 'elpy-goto-definition)
-            (define-key elpy-mode-map (kbd "C-c d") 'elpy-goto-assignment)
-
+            (define-key elpy-mode-map (kbd "s-j") 'elpy-goto-assignment)
             )
           )
 ;;code navigating
-(global-set-key (kbd "C-c b") 'pop-tag-mark)
+(global-set-key (kbd "s-b") 'pop-tag-mark)
 (global-set-key (kbd "C-c l") 'goto-line)
+(global-set-key (kbd "C-a") 'back-to-indentation)
 
 ;;window or buffer managment
-(global-set-key (kbd "s-j") 'ace-window)
-(global-set-key (kbd "s-[") 'previous-buffer)
-(global-set-key (kbd "s-]") 'next-buffer)
+(global-set-key (kbd "C-x o") 'ace-window)
+(global-set-key (kbd "C-x p") 'previous-buffer)
+(global-set-key (kbd "C-x n") 'next-buffer)
+(global-set-key (kbd "M-j") 'neotree-find)
+(global-set-key (kbd "M-J") 'neotree-hide)
 
-
-(global-set-key (kbd "s-]") 'next-buffer)
 
 
 ;;projectile
@@ -209,6 +208,7 @@
 (global-set-key (kbd "C-c i") #'imenu)
 
 ;;search
+(global-set-key (kbd "C-s") 'swiper)
 (global-set-key (kbd "C-c s") 'helm-do-ag-project-root)
 
 ;;highlight symbol key-binding
@@ -216,7 +216,7 @@
 
 
 ;;comment
-(global-set-key (kbd "C-c C-/") 'comment-or-uncomment-region)
+(global-set-key (kbd "C-c C-/") 'spacemacs/comment-or-uncomment-lines)
 (global-set-key (kbd "C-{") 'shrink-window-horizontally)
 (global-set-key (kbd "C-}") 'enlarge-window-horizontally)
 
