@@ -24,6 +24,7 @@
     column-enforce-mode company counsel
     counsel-projectile cython-mode dash
     dash dash-functional define-word
+
     diminish dumb-jump elisp-slime-nav
     elpl elpy emmet-mode epl
     eval-sexp-fu evil evil-anzu evil-args evil-ediff
@@ -48,7 +49,7 @@
     volatile-highlights web-mode wgrep which-key winum with-editor ws-butler
     yapfify yasnippet thingatpt diff-hl
     helm-ag;;depend on ag: brew install ag
-    
+
     ))
 
 
@@ -153,7 +154,7 @@
 
 (global-set-key (kbd "M-x") 'helm-M-x);;use helm-M-x instead
 
-(defun dfeich/org-agenda-mode-fn ()
+(defun lht/org-agenda-mode-fn ()
   (define-key org-agenda-mode-map
     (kbd "<S-up>") #'org-clock-convenience-timestamp-up)
   (define-key org-agenda-mode-map
@@ -162,34 +163,36 @@
     (kbd "<S-f>") #'org-clock-convenience-fill-gap)
   (define-key org-agenda-mode-map
     (kbd "<S-F>") #'org-clock-convenience-fill-gap-both))
-(add-hook 'org-agenda-mode-hook #'dfeich/org-agenda-mode-fn)
+(add-hook 'org-agenda-mode-hook #'lht/org-agenda-mode-fn)
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (define-key org-mode-map (kbd "C-c j") 'org-clock-in)
+            (define-key org-mode-map (kbd "C-c k") 'org-clock-out)
+            (define-key org-mode-map (kbd "C-c r") 'org-clock-update-time-maybe)
+            )
+          )
 
 ;;========================= org-mode ========================;;
 
 
 ;;========================= key-binding =====================;;
 
-(eval-after-load 'python
-  '(progn
-     (define-key python-mode-map (kbd "C-c C-f") nil)
-     (define-key python-mode-map (kbd "C-c C-s") nil)
-     ))
-(eval-after-load 'python
-  '(progn
-     (define-key elpy-mode-map (kbd "C-c C-s") nil)))
+(require 'keyfreq)
+(keyfreq-mode 1)
+(keyfreq-autosave-mode 1)
 
-(add-hook 'elpy-mode-hook
-          (lambda ()
-            (local-unset-key (kbd "M-TAB"))
 
-            ;;code navigating
-            (define-key elpy-mode-map (kbd "s-j") 'elpy-goto-assignment)
-            )
-          )
+;;text edit
+(global-set-key (kbd "C-_") 'undo-tree-undo)
+(global-set-key (kbd "C-+") 'undo-tree-redo)
+slkdjafalk
+
 ;;code navigating
 (global-set-key (kbd "s-b") 'pop-tag-mark)
 (global-set-key (kbd "C-c l") 'goto-line)
 (global-set-key (kbd "C-a") 'back-to-indentation)
+
 
 ;;window or buffer managment
 (global-set-key (kbd "C-x o") 'ace-window)
@@ -223,10 +226,16 @@
 
 ;;========================= coding ===========================;;
 
-
+(setq delete-active-region nil)
 ;;_不再是当做 word seperator 极度好用0.0
 (defun underline-in-word () (modify-syntax-entry ?_ "w"))
 (add-hook 'python-mode-hook 'underline-in-word)
+
+(defun remove-dos-eol ()
+  "Do not show ^M in files containing mixed UNIX and DOS line endings."
+  (interactive)
+  (setq buffer-display-table (make-display-table))
+  (aset buffer-display-table ?\^M []))
 
 ;;;80 column
 (require 'column-marker)
@@ -282,8 +291,32 @@
 (setq projectile-enable-caching t);;Since indexing a big project is not exactly quick (especially in Emacs Lisp), Projectile supports caching of the project’s files. The caching is enabled by default whenever native indexing is enabled.To enable caching unconditionally use this snippet of code:
 
 
-;;========================= elpy ===========================;;
+;;========================= python ===========================;;
 (add-hook 'elpy-mode-hook (lambda () (highlight-indentation-mode -1)))
+
+(eval-after-load 'python
+  '(progn
+     (define-key python-mode-map (kbd "C-c C-f") nil)
+     (define-key python-mode-map (kbd "C-c C-s") nil)
+     ))
+(eval-after-load 'python
+  '(progn
+     (define-key elpy-mode-map (kbd "C-c C-s") nil)))
+
+(defun goto-def-or-helm-do-ag ()
+  "Go to definition of thing at point or do an rgrep in project if that fails"
+  (interactive)
+  (condition-case nil (elpy-goto-assignment)
+    (error (helm-do-ag-project-root (thing-at-point 'symbol)))))
+
+(add-hook 'elpy-mode-hook
+          (lambda ()
+            (local-unset-key (kbd "M-TAB"))
+
+            ;;code navigating
+            (define-key elpy-mode-map (kbd "s-j") 'goto-def-or-helm-do-ag)
+            )
+          )
 
 ;;========================= coding ===========================;;
 
