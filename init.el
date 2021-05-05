@@ -71,6 +71,7 @@
   :ensure t
   :init
   (elpy-enable))
+(setq elpy-rpc-ignored-buffer-size 204800)
 
 (defconst spacemacs-version         "0.200.13" "Spacemacs version.")
 (defconst spacemacs-emacs-min-version   "24.4" "Minimal version of Emacs.")
@@ -89,10 +90,17 @@
   (require 'server)
   (unless (server-running-p) (server-start)))
 
-
 (setq frame-title-format
-      (list (format "%s %%S: %%j " (system-name))
-            '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
+      '(""
+        "%b"
+        (:eval
+         (let ((project-name (projectile-project-name)))
+           (unless (string= "-" project-name)
+             (format " in [%s]" project-name))))))
+
+;; (setq frame-title-format
+;;       (list (format "%s %%S: %%j " (system-name))
+;;             '(buffer-file-name "%f" (dired-directory dired-directory "%b"))))
 
 ;;========================= file path dir ========================;;
 (defun my/copy-cur-file-dir ()
@@ -117,7 +125,7 @@
         (sequence "Idle(I)" "|")
         )
       )
-(setq org-tag-alist '(("@work" . ?w) ("@life" . ?l) ("positive" . ?p) ("negative" . ?n)))
+(setq org-tag-alist '(("@work" . ?w) ("@life" . ?l) ("@habit" . ?h) ("@task" . ?t)))
 (setq org-capture-templates
       '(
         ;task inbox templates
@@ -173,6 +181,14 @@
             )
           )
 
+
+;; https://github.com/tumashu/cnfonts
+(require 'cnfonts)
+;; 让 cnfonts 随着 Emacs 自动生效。
+(cnfonts-enable)
+;; 让 spacemacs mode-line 中的 Unicode 图标正确显示。
+;; (cnfonts-set-spacemacs-fallback-fonts)
+
 ;;========================= org-mode ========================;;
 
 
@@ -186,7 +202,38 @@
 ;;text edit
 (global-set-key (kbd "C-_") 'undo-tree-undo)
 (global-set-key (kbd "C-+") 'undo-tree-redo)
-slkdjafalk
+
+
+;;↓↓↓↓↓↓↓↓↓↓↓↓↓ mark cur word ↓↓↓↓↓↓↓↓↓↓↓↓↓;;
+(defun mark-whole-word (&optional arg allow-extend)
+  "Like `mark-word', but selects whole words and skips over whitespace.
+If you use a negative prefix arg then select words backward.
+Otherwise select them forward.
+
+If cursor starts in the middle of word then select that whole word.
+
+If there is whitespace between the initial cursor position and the
+first word (in the selection direction), it is skipped (not selected).
+
+If the command is repeated or the mark is active, select the next NUM
+words, where NUM is the numeric prefix argument.  (Negative NUM
+selects backward.)"
+  (interactive "P\np")
+  (let ((num  (prefix-numeric-value arg)))
+    (unless (eq last-command this-command)
+      (if (natnump num)
+          (skip-syntax-forward "\\s-")
+        (skip-syntax-backward "\\s-")))
+    (unless (or (eq last-command this-command)
+                (if (natnump num)
+                    (looking-at "\\b")
+                  (looking-back "\\b")))
+      (if (natnump num)
+          (left-word)
+        (right-word)))
+    (mark-word arg allow-extend)))
+(global-set-key [remap mark-word] 'mark-whole-word)
+;;↑↑↑↑↑↑↑↑↑↑↑ mark cur word ↑↑↑↑↑↑↑↑↑↑↑↑↑;;
 
 ;;code navigating
 (global-set-key (kbd "s-b") 'pop-tag-mark)
@@ -195,11 +242,12 @@ slkdjafalk
 
 
 ;;window or buffer managment
-(global-set-key (kbd "C-x o") 'ace-window)
 (global-set-key (kbd "C-x p") 'previous-buffer)
 (global-set-key (kbd "C-x n") 'next-buffer)
-(global-set-key (kbd "M-j") 'neotree-find)
+(global-set-key (kbd "C-x b") 'helm-buffers-list)
+(global-set-key (kbd "M-j") 'neotree)
 (global-set-key (kbd "M-J") 'neotree-hide)
+(global-set-key (kbd "C-x k") 'kill-buffer-and-window)
 
 
 
@@ -208,7 +256,8 @@ slkdjafalk
 
 
 ;;imenu
-(global-set-key (kbd "C-c i") #'imenu)
+(global-unset-key (kbd "C-c j"))
+(global-set-key (kbd "C-c u") #'imenu)
 
 ;;search
 (global-set-key (kbd "C-s") 'swiper)
@@ -226,7 +275,8 @@ slkdjafalk
 
 ;;========================= coding ===========================;;
 
-(setq delete-active-region nil)
+(delete-selection-mode 1)
+
 ;;_不再是当做 word seperator 极度好用0.0
 (defun underline-in-word () (modify-syntax-entry ?_ "w"))
 (add-hook 'python-mode-hook 'underline-in-word)
@@ -320,6 +370,52 @@ slkdjafalk
 
 ;;========================= coding ===========================;;
 
+;;========================= window/buffer ===========================;;
+(require 'ace-window)
+(setq aw-ignore-on 1)
+(setq neo-window-fixed-size nil)
+(add-to-list 'aw-ignored-buffers "*NeoTree*")
+(global-set-key (kbd "C-c o") 'ace-window)
+
+
+
+(global-set-key (kbd "M-r") 'recentf-open-files)
+
+
+;;↓↓↓↓↓↓↓↓↓ignore buffers when switch next or previous buffer
+(defcustom my-skippable-buffers '("*Messages*" "*scratch*" "*Help*")
+  "Buffer names ignored by `my-next-buffer' and `my-previous-buffer'."
+  :type '(repeat string))
+
+(defun my-change-buffer (change-buffer)
+  "Call CHANGE-BUFFER until current buffer is not in `my-skippable-buffers'."
+  (let ((initial (current-buffer)))
+    (funcall change-buffer)
+    (let ((first-change (current-buffer)))
+      (catch 'loop
+        (while (member (buffer-name) my-skippable-buffers)
+          (funcall change-buffer)
+          (when (eq (current-buffer) first-change)
+            (switch-to-buffer initial)
+            (throw 'loop t)))))))
+
+(defun my-next-buffer ()
+  "Variant of `next-buffer' that skips `my-skippable-buffers'."
+  (interactive)
+  (my-change-buffer 'next-buffer))
+
+(defun my-previous-buffer ()
+  "Variant of `previous-buffer' that skips `my-skippable-buffers'."
+  (interactive)
+  (my-change-buffer 'previous-buffer))
+
+(global-set-key [remap next-buffer] 'my-next-buffer)
+(global-set-key [remap previous-buffer] 'my-previous-buffer)
+;;↑↑↑↑↑↑↑↑ignore buffers when switch next or previous buffer
+
+
+;;========================= window/buffer ===========================;;
+
 
 
 ;;========================= shell ===========================;;
@@ -330,6 +426,7 @@ slkdjafalk
 ;;========================= helm ===========================;;
 ;;fix helm duplicate commands history
 (setq history-delete-duplicates t)
+(setq helm-ag-use-agignore 1)
 ;;========================= helm ===========================;;
 
 ;;========================= theme ========================;;
@@ -339,3 +436,44 @@ slkdjafalk
 ;;========================= tramp ========================;;
 (setq tramp-verbose 10)
 ;;========================= tramp ========================;;
+
+;;========================= neotree =========================;;
+;;当执行 projectile-switch-project (C-c p p) 时，NeoTree 会自动改变根目录。
+;;(setq projectile-switch-project-action 'neotree-projectile-action)
+;;========================= neotree =========================;;
+
+(defun my/uploadfile()
+  (interactive)
+  (_uploadfile)
+  )
+
+(defun _uploadfile()
+    (setq command (concat "osascript /Users/admin/Desktop/other/scripts/workflow/transmit/upload_file.scpt " buffer-file-name))
+    (async-shell-command command)
+    )
+(setq async-shell-command-display-buffer nil)
+
+
+;;========================= auto-save =========================;;
+(require 'auto-save)
+(auto-save-enable)
+
+(setq auto-save-interval 8)
+(setq auto-save-silent t)   ; quietly save
+(setq auto-save-delete-trailing-whitespace t)  ; automatically delete spaces at the end of the line when saving
+
+;;; custom predicates if you don't want auto save.
+;;; disable auto save mode when current filetype is an gpg file.
+;; (setq auto-save-disable-predicates
+;;       '((lambda ()
+;;           (string-suffix-p
+;;            "gpg"
+;;            (file-name-extension (buffer-name)) t))))
+(add-hook 'python-mode-hook
+          (lambda()
+            (add-hook 'after-save-hook '_uploadfile 'make-it-local)))
+
+;;
+(desktop-save-mode 1)
+
+;;========================= auto-save =========================;;
